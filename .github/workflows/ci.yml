@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: sanjeevani
+          POSTGRES_USER: sanjeevani
+          POSTGRES_PASSWORD: ci-password
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sanjeevani -d sanjeevani"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: |
+            app/package-lock.json
+            backend/package-lock.json
+      - name: Install frontend dependencies
+        working-directory: app
+        run: npm ci
+      - name: Build frontend
+        working-directory: app
+        run: npm run build
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+      - name: Test backend
+        working-directory: backend
+        env:
+          DATABASE_URL: postgresql://sanjeevani:ci-password@localhost:5432/sanjeevani
+          JWT_SECRET: ci-secret-with-at-least-thirty-two-characters
+          ADMIN_EMAIL: admin@example.com
+          ADMIN_PASSWORD: integration-admin-password
+        run: npm test
