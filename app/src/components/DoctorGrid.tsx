@@ -16,7 +16,7 @@ export default function DoctorGrid() {
                 <h5 className="fw-bold">{doctor.name}</h5>
                 <p className="qualification">{doctor.qualification}</p>
                 <p className="doctor-specialty">{doctor.specialty}</p>
-                <span className="badge rounded-pill bg-primary-subtle text-primary">{doctor.department}</span>
+                <span className="badge rounded-pill bg-primary-subtle text-primary doctor-department">{doctor.department}</span>
               </div>
             </div>
           ))}

@@ -6,12 +6,13 @@ import type { Service } from '../types';
 
 export default function ServicesPage() {
   const [directory, setDirectory] = useState<Service[]>(services);
-  const [usingFallback, setUsingFallback] = useState(false);
 
   useEffect(() => {
     apiRequest<Service[]>('/api/services')
       .then(setDirectory)
-      .catch(() => setUsingFallback(true));
+      .catch((error: unknown) => {
+        console.error('Could not load hospital services; showing local service information.', error);
+      });
   }, []);
 
   return (
@@ -20,7 +21,6 @@ export default function ServicesPage() {
 
       <section className="py-5">
         <div className="container">
-          {usingFallback && <p className="small text-muted mb-3" role="status">Showing locally cached service information.</p>}
           <div className="row g-4">
             {directory.map((service) => (
               <div key={service.id} className="col-md-6 col-lg-4">

@@ -4,6 +4,7 @@ import FaqList from '../components/FaqList';
 import Hero from '../components/Hero';
 import ServiceGrid from '../components/ServiceGrid';
 import { hospitalInfo } from '../data/hospitalData';
+import heroImage from '../assets/hero.png';
 
 export default function HomePage() {
   return (
@@ -20,7 +21,7 @@ export default function HomePage() {
           <div className="row align-items-center g-5">
             <div className="col-lg-6 text-center">
               <img
-                src="https://images.unsplash.com/photo-1584515933487-779824d29309?auto=format&fit=crop&w=1000&q=80"
+                src={heroImage}
                 className="img-fluid rounded shadow-sm"
                 alt="Hospital front view"
                 loading="lazy"
@@ -32,7 +33,7 @@ export default function HomePage() {
               <p className="lead">
                 {hospitalInfo.name} has been dedicated to providing comprehensive and compassionate healthcare in Nagpur since 2001. We offer advanced medical services, emergency response, and thoughtful specialist support.
               </p>
-              <p className="text-muted">
+              <p className="text-muted marathi-text">
                 संजीवनी नर्सिंग होम आणि मल्टिस्पेशालिटी हॉस्पिटल २००१ पासून नागपूरमध्ये सर्वांगीण आणि प्रेमळ आरोग्यसेवा देण्यासाठी कटिबद्ध आहे.
               </p>
             </div>

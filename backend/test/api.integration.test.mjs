@@ -2,12 +2,38 @@ import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import test from 'node:test';
+import { SMTPServer } from 'smtp-server';
 
 const integrationTest = process.env.DATABASE_URL ? test : test.skip;
 
 integrationTest('patient, admin, appointment, and AI API flows', async () => {
   const port = Number(process.env.TEST_PORT || 4311);
   const baseUrl = `http://127.0.0.1:${port}`;
+  const receivedMessages = [];
+  const mailServer = new SMTPServer({
+    allowInsecureAuth: true,
+    hideSTARTTLS: true,
+    onAuth(auth, _session, callback) {
+      if (auth.username !== 'test-user' || auth.password !== 'test-password') {
+        callback(new Error('Invalid test SMTP credentials.'));
+        return;
+      }
+      callback(null, { user: auth.username });
+    },
+    onData(stream, _session, callback) {
+      const chunks = [];
+      stream.on('data', (chunk) => chunks.push(chunk));
+      stream.on('end', () => {
+        receivedMessages.push(Buffer.concat(chunks).toString('utf8'));
+        callback(null, 'Accepted by integration test SMTP server.');
+      });
+    },
+  });
+  await new Promise((resolve, reject) => {
+    mailServer.once('error', reject);
+    mailServer.listen(0, '127.0.0.1', resolve);
+  });
+  const mailPort = mailServer.server.address().port;
   const child = spawn(process.execPath, ['dist/server.js'], {
     cwd: process.cwd(),
     env: {
@@ -16,6 +42,12 @@ integrationTest('patient, admin, appointment, and AI API flows', async () => {
       JWT_SECRET: process.env.JWT_SECRET || 'integration-test-secret-at-least-32-chars',
       ADMIN_EMAIL: process.env.ADMIN_EMAIL || 'admin@example.com',
       ADMIN_PASSWORD: process.env.ADMIN_PASSWORD || 'integration-admin-password',
+      SMTP_HOST: '127.0.0.1',
+      SMTP_PORT: String(mailPort),
+      SMTP_USER: 'test-user',
+      SMTP_PASSWORD: 'test-password',
+      SMTP_FROM: 'Sanjeevani Hospital <hospital@example.test>',
+      APPOINTMENT_RECIPIENT_EMAIL: 'tanushreepal2319@gmail.com',
     },
     stdio: 'ignore',
   });
@@ -47,11 +79,22 @@ integrationTest('patient, admin, appointment, and AI API flows', async () => {
     assert.equal(registration.response.status, 201);
     const patientToken = registration.body.token;
 
+    const invalidAppointment = await fetchJson('/api/appointments', {
+      method: 'POST',
+      body: JSON.stringify({ name: 'Test Patient', phone: '07123456789', email, date: '2099-99-99', departmentId: 'general-medicine', message: 'Invalid date' }),
+    }, patientToken);
+    assert.equal(invalidAppointment.response.status, 400);
+
     const appointment = await fetchJson('/api/appointments', {
       method: 'POST',
       body: JSON.stringify({ name: 'Test Patient', phone: '07123456789', email, date: '2099-04-20', departmentId: 'general-medicine', message: 'Routine consultation' }),
     }, patientToken);
     assert.equal(appointment.response.status, 201);
+    assert.equal(receivedMessages.length, 1);
+    assert.match(receivedMessages[0], /Test Patient/);
+    assert.match(receivedMessages[0], /07123456789/);
+    assert.match(receivedMessages[0], /general medicine/);
+    assert.match(receivedMessages[0], /Routine consultation/);
 
     const patientAppointments = await fetchJson('/api/appointments', {}, patientToken);
     assert.equal(patientAppointments.response.status, 200);
@@ -87,5 +130,6 @@ integrationTest('patient, admin, appointment, and AI API flows', async () => {
   } finally {
     child.kill();
     await once(child, 'exit').catch(() => {});
+    await new Promise((resolve) => mailServer.close(resolve));
   }
 }, { timeout: 45000 });

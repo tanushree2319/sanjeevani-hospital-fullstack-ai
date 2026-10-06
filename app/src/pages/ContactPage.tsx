@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { hospitalInfo } from '../data/hospitalData';
 import { apiRequest } from '../lib/api';
 
@@ -24,9 +24,18 @@ export default function ContactPage() {
   const [formData, setFormData] = useState<FormState>(initialState);
   const [minimumDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [submitted, setSubmitted] = useState(false);
+  const successDialog = useRef<HTMLDialogElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [whatsappUrl, setWhatsappUrl] = useState('');
+
+  useEffect(() => {
+    if (submitted && successDialog.current && !successDialog.current.open) {
+      successDialog.current.showModal();
+    } else if (!submitted && successDialog.current?.open) {
+      successDialog.current.close();
+    }
+  }, [submitted]);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = event.target;
@@ -113,7 +122,6 @@ export default function ContactPage() {
                       <button type="submit" className="btn btn-primary px-4 mt-2" disabled={busy}>Book Appointment</button>
                       {busy && <span className="ms-3 text-muted" role="status">Submitting request...</span>}
                       {error && <p className="text-danger mt-3" role="alert">{error}</p>}
-                      {submitted && <p className="text-success mt-3" role="status">Request received. <a href={whatsappUrl} target="_blank" rel="noreferrer">Continue in WhatsApp</a></p>}
                     </div>
                   </div>
                 </form>
@@ -142,6 +150,20 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
+
+      <dialog
+        ref={successDialog}
+        className="booking-success-dialog"
+        aria-labelledby="booking-success-title"
+        onClose={() => setSubmitted(false)}
+      >
+        <h2 id="booking-success-title" className="h3 mb-3">Booking Request Sent</h2>
+        <p className="mb-4">Thank you for contacting Sanjeevani Hospital. Your appointment request has been received. We will contact you shortly.</p>
+        <div className="d-flex flex-wrap align-items-center gap-3">
+          <button type="button" className="btn btn-primary" onClick={() => successDialog.current?.close()}>Close</button>
+          <a href={whatsappUrl} target="_blank" rel="noreferrer">Continue in WhatsApp</a>
+        </div>
+      </dialog>
     </>
   );
 }

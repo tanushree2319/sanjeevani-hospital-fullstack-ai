@@ -46,6 +46,8 @@ npm run dev
 
 For local API development, copy `backend/.env.example` to `backend/.env` and set `DATABASE_URL`, `JWT_SECRET`, `CLIENT_URL`, `ADMIN_EMAIL`, `ADMIN_PASSWORD`, and `OPENAI_API_KEY`. Keep the OpenAI key only in `backend/.env`; never add it to `app/.env` or frontend code. Vite proxies `/api` requests to `http://localhost:4000`. Without PostgreSQL, the API still starts in degraded mode so the AI endpoint can report configuration errors clearly; database-backed endpoints require PostgreSQL.
 
+Appointment requests are emailed by the backend through SMTP. Set `APPOINTMENT_RECIPIENT_EMAIL`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD`, and `SMTP_FROM` in the backend environment; keep credentials out of source control. GitHub Pages hosts only the static frontend, so deploy the Express API separately. Set the GitHub repository Actions variable `VITE_API_BASE_URL` to the deployed API origin (without a trailing slash), and configure backend `CLIENT_URL` to the frontend site origin so CORS permits the browser request.
+
 ## Verification
 
 ```powershell
@@ -60,7 +62,7 @@ npm ci
 npm test
 ```
 
-Backend unit tests cover JWT verification, role authorization, and the live AI endpoint's validation/missing-key behavior without requiring a database or provider key. When `DATABASE_URL` is set, the API integration test starts the server and checks registration, appointment access, admin permissions/status changes, and the emergency safety response. A normal LLM answer requires a valid `OPENAI_API_KEY`; no successful provider response is claimed without that secret. GitHub Actions runs the database integration test against PostgreSQL.
+Backend unit tests cover JWT verification, role authorization, the AI endpoint's validation/missing-key behavior, and SMTP delivery to a local test server without requiring real credentials. When `DATABASE_URL` is set, the API integration test starts the server and checks registration, appointment validation/email delivery, appointment access, admin permissions/status changes, and the emergency safety response. A normal LLM answer requires a valid `OPENAI_API_KEY`; no successful provider response is claimed without that secret. GitHub Actions runs the database integration test against PostgreSQL.
 
 ## Features
 

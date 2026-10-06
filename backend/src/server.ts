@@ -4,6 +4,7 @@ import cors from 'cors';
 import express from 'express';
 import { z } from 'zod';
 import { aiChatController } from './controllers/aiController.js';
+import { AppointmentEmailConfigurationError, sendAppointmentEmail } from './appointmentEmail.js';
 import { optionalAuth, requireAdmin, requireAuth, signToken } from './auth.js';
 import { initializeDatabase, pool } from './db.js';
 
@@ -41,7 +42,7 @@ const appointmentSchema = z.object({
   name: z.string().trim().min(2).max(100),
   phone: z.string().trim().min(8).max(30),
   email: z.union([z.string().trim().email().max(254), z.literal('')]).optional(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  date: z.string().date(),
   departmentId: z.string().min(2),
   message: z.string().trim().max(2000).optional().default(''),
 });
@@ -152,6 +153,16 @@ app.post('/api/appointments', requireDatabase, optionalAuth, async (req, res, ne
        RETURNING id, name, phone, email, appointment_date AS date, department_id, message, status, created_at AS "createdAt"`,
       [patientId, data.name, data.phone, email, data.date, data.departmentId, data.message],
     );
+    try {
+      await sendAppointmentEmail({ ...data, email });
+    } catch (error) {
+      if (error instanceof AppointmentEmailConfigurationError) {
+        console.error('Appointment notification email is not configured.');
+        return res.status(503).json({ error: 'The appointment email service is not configured. Please contact the hospital directly.' });
+      }
+      console.error('Appointment notification email could not be delivered.');
+      return res.status(502).json({ error: 'Unable to send your booking request right now. Please try again or contact the hospital directly.' });
+    }
     return res.status(201).json({ appointment: result.rows[0], message: 'Appointment request received. The hospital team will contact you to confirm.' });
   } catch (error) {
     if ((error as { code?: string }).code === '23503') return res.status(400).json({ error: 'Select a valid department.' });

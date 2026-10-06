@@ -23,8 +23,8 @@ export default function AboutPage() {
               <p className="lead">
                 Sanjeevani Nursing Home & Multispeciality Hospital has been dedicated to providing comprehensive and compassionate healthcare in Nagpur since 2001. We offer advanced medical services including emergency and accident care delivered by experienced specialists.
               </p>
-              <p className="text-muted">
-                Our vision is to serve as Nagpur’s trusted centre of advanced, ethical and affordable healthcare — where every patient feels cared for, respected and safe.
+              <p className="text-muted marathi-text">
+                संजीवनी नर्सिंग होम आणि मल्टिस्पेशालिटी हॉस्पिटल २००१ पासून नागपूरमध्ये सर्वांगीण आणि प्रेमळ आरोग्यसेवा देण्यासाठी कटिबद्ध आहे.
               </p>
             </div>
           </div>

@@ -38,11 +38,19 @@ export async function apiRequest<T>(path: string, init: RequestInit = {}): Promi
   } catch {
     throw new Error('Could not reach the hospital API. Check that the backend is running and try again.');
   }
-  const payload = await response.json().catch(() => ({})) as {
-    error?: string | { message?: string };
-    message?: string;
-  };
+  const contentType = response.headers.get('content-type') || '';
+  const payload = contentType.includes('application/json')
+    ? await response.json().catch(() => ({})) as {
+      error?: string | { message?: string };
+      message?: string;
+    }
+    : {};
   const errorMessage = typeof payload.error === 'string' ? payload.error : payload.error?.message;
-  if (!response.ok) throw new Error(errorMessage || payload.message || 'The request could not be completed.');
+  if (!response.ok) {
+    const fallback = response.status >= 500 || !contentType.includes('application/json')
+      ? 'The hospital booking service is not configured or is unavailable. Please contact the hospital directly or try again later.'
+      : 'The request could not be completed.';
+    throw new Error(errorMessage || payload.message || fallback);
+  }
   return payload as T;
 }

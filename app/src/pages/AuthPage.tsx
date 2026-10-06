@@ -17,7 +17,10 @@ export default function AuthPage({ register = false }: { register?: boolean }) {
     setBusy(true);
     try {
       const session = await authenticate(register ? '/api/auth/register' : '/api/auth/login', fields);
-      navigate(requestedPath || (session.user.role === 'admin' ? '/admin-dashboard' : '/patient-dashboard'), { replace: true });
+      navigate(requestedPath || (session.user.role === 'admin' ? '/admin-dashboard' : '/patient-dashboard'), {
+        replace: true,
+        state: { notice: register ? 'Your account was created successfully.' : 'Signed in successfully.' },
+      });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : 'Authentication failed.');
     } finally {
