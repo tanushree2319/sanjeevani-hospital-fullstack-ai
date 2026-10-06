@@ -3,6 +3,7 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
+  base: '/sanjeevani-hospital-fullstack-ai/',
   plugins: [react()],
   server: {
     proxy: {
