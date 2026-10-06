@@ -1,5 +1,5 @@
 import PageHeader from '../components/PageHeader';
-import hospitalFrontImage from '../../../assets/images/hospital-front.png';
+import hospitalFrontImage from '../assets/hero.png';
 
 export default function AboutPage() {
   return (
